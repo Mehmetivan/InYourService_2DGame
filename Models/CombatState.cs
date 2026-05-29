@@ -1,3 +1,5 @@
+// AI-generated
+
 namespace TheAdventure.Models;
 
 public enum CombatPhase
@@ -24,3 +26,5 @@ public class CombatState
     public double FadeAlpha { get; set; } = 0;
     public string TauntText { get; set; } = "SHOW ME WHAT YOU GOT.";
 }
+
+// AI-generated

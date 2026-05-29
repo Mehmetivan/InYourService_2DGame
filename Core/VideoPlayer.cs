@@ -1,3 +1,5 @@
+// AI-generated
+
 using FFmpeg.AutoGen;
 using Silk.NET.Maths;
 using Silk.NET.SDL;
@@ -185,3 +187,5 @@ public VideoPlayer(GameRenderer renderer)
         if (_swsCtx != null) ffmpeg.sws_freeContext(_swsCtx);
     }
 }
+
+// AI-generated

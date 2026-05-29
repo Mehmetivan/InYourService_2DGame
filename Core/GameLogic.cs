@@ -2,6 +2,7 @@ namespace TheAdventure.Core;
 using TheAdventure.Models;
 public enum GamePhase
 {
+    MainMenu,
     Intro,
     Exploring,
     Ending,
@@ -11,6 +12,8 @@ public enum GamePhase
 
 public class GameLogic : IDisposable
 {
+    private bool _showSavedMessage = false;
+    private double _savedMessageTimer = 0;
     private readonly GameRenderer _renderer;
     private readonly Dictionary<int, GameObject> _gameObjects = new();
 
@@ -69,7 +72,14 @@ public class GameLogic : IDisposable
         // TEMP: skip to video
         //_phase = GamePhase.Done;
 
-        StartIntroDialogue();
+        if (SaveSystem.SaveExists())
+        {
+            _phase = GamePhase.MainMenu;
+        }
+        else
+        {
+            StartIntroDialogue();
+        }
 
         //testing last quest directly:
         // TEMP: complete all quests for testing
@@ -312,14 +322,12 @@ public class GameLogic : IDisposable
 
         if (_phase == GamePhase.Exploring)
         {
-            foreach (var npc in _npcs)
+            var nearbyNpc = _npcs.FirstOrDefault(n => !n.QuestComplete && n.IsPlayerNearby(_player.X, _player.Y));
+            if (nearbyNpc != null)
             {
-                if (!npc.QuestComplete && npc.IsPlayerNearby(_player.X, _player.Y))
-                {
-                    _activeNpc = npc;
-                    StartNpcDialogue(npc);
-                    return;
-                }
+                _activeNpc = nearbyNpc;
+                StartNpcDialogue(nearbyNpc);
+                return;
             }
         }
     }
@@ -362,6 +370,15 @@ public class GameLogic : IDisposable
 
         _renderer.Clear();
 
+        if (_phase == GamePhase.MainMenu)
+        {
+            _renderer.DrawFilledRect(0, 0, 1024, 800, 10, 10, 20);
+            _renderer.DrawText("IN YOUR SERVICE", 350, 300);
+            _renderer.DrawText("[C] CONTINUE", 420, 370);
+            _renderer.DrawText("[N] NEW GAME", 420, 400);
+            _renderer.Present();
+            return;
+        }
         // Combat phase takes over entirely
         if (_phase == GamePhase.Combat && _combat != null)
         {
@@ -455,18 +472,14 @@ public class GameLogic : IDisposable
 
             if (!_dialogue.IsActive && _phase == GamePhase.Exploring)
             {
-                foreach (var npc in _npcs)
+                foreach (var npc in _npcs.Where(n => !n.QuestComplete))
                 {
-                    if (!npc.QuestComplete)
-                    {
-                        var (sx, sy) = _camera.WorldToScreen(npc.X, npc.Y - 5);
-                        // Draw exclamation marker
-                        _renderer.DrawFilledRect(sx - 4, sy - 20, 8, 16, 255, 200, 0);
-                        _renderer.DrawFilledRect(sx - 4, sy - 2, 8, 8, 255, 200, 0);
+                    var (sx, sy) = _camera.WorldToScreen(npc.X, npc.Y - 5);
+                    _renderer.DrawFilledRect(sx - 4, sy - 20, 8, 16, 255, 200, 0);
+                    _renderer.DrawFilledRect(sx - 4, sy - 2, 8, 8, 255, 200, 0);
 
-                        if (npc.IsPlayerNearby(_player.X, _player.Y))
-                            _renderer.DrawText("[E] TALK", sx - 30, sy - 22);
-                    }
+                    if (npc.IsPlayerNearby(_player.X, _player.Y))
+                        _renderer.DrawText("[E] TALK", sx - 30, sy - 22);
                 }
 
                 if (GameState.AllQuestsDone)
@@ -487,9 +500,8 @@ public class GameLogic : IDisposable
 
             if (_phase == GamePhase.Exploring)
             {
-                int done = (GameState.FarmerQuestDone ? 1 : 0) +
-                           (GameState.MinerQuestDone ? 1 : 0) +
-                           (GameState.TurtleQuestDone ? 1 : 0);
+                int done = new[] { GameState.FarmerQuestDone, GameState.MinerQuestDone, GameState.TurtleQuestDone }
+    .Count(q => q);
                 _renderer.DrawText($"DEEDS:{done}/3", 10, 40);
 
                 if (GameState.AllQuestsDone)
@@ -501,6 +513,13 @@ public class GameLogic : IDisposable
                 string npcName = _activeNpc?.Name ?? "Sr Aldr!c";
                 _dialogueRenderer?.Render(_dialogue, npcName);
             }
+            if (_showSavedMessage && _phase == GamePhase.Exploring)
+            {
+                _savedMessageTimer -= timeSinceLastFrame;
+                _renderer.DrawText("GAME SAVED", 440, 760, 0, 0, 0);
+                if (_savedMessageTimer <= 0)
+                    _showSavedMessage = false;
+            }
         }
 
         _renderer.Present();
@@ -509,5 +528,67 @@ public class GameLogic : IDisposable
     {
         _audio.Dispose();
         _videoPlayer?.Dispose();
-    }    
+    }
+    public void SaveGame()
+    {
+        if (_phase != GamePhase.Exploring || _player == null) return;
+
+        var data = new SaveData
+        {
+            Honour = GameState.Honour,
+            Coins = GameState.Coins,
+            FarmerQuestDone = GameState.FarmerQuestDone,
+            MinerQuestDone = GameState.MinerQuestDone,
+            TurtleQuestDone = GameState.TurtleQuestDone,
+            PlayerX = _player.X,
+            PlayerY = _player.Y,
+            Phase = "Exploring"
+        };
+
+        SaveSystem.Save(data);
+        _showSavedMessage = true;
+        _savedMessageTimer = 2000; // show for 2 seconds
+    }
+    public void SelectMenuOption(string option)
+    {
+        if (_phase != GamePhase.MainMenu) return;
+
+        if (option == "continue")
+        {
+            var save = SaveSystem.Load();
+            if (save != null)
+            {
+                GameState.LoadFromSave(save);
+                _player!.SetPosition(save.PlayerX, save.PlayerY);
+                _phase = GamePhase.Exploring;
+                _camera!.Follow(save.PlayerX, save.PlayerY);
+
+                // Restore NPC quest completion state
+                foreach (var npc in _npcs)
+                {
+                    npc.QuestComplete = npc.Type switch
+                    {
+                        NpcType.Farmer => save.FarmerQuestDone,
+                        NpcType.Miner => save.MinerQuestDone,
+                        NpcType.Turtle => save.TurtleQuestDone,
+                        _ => false
+                    };
+                }
+            }
+        }
+        else if (option == "new")
+        {
+            SaveSystem.Delete();
+            
+            // Reset game state
+            GameState.Reset();
+            // Reset NPCs
+            foreach (var npc in _npcs)
+                npc.QuestComplete = false;
+
+            _phase = GamePhase.Intro;
+            StartIntroDialogue();
+        }
+    }
+    
 }

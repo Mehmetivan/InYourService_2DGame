@@ -1,3 +1,5 @@
+// AI-generated
+
 using NAudio.Wave;
 
 namespace TheAdventure.Core;
@@ -83,3 +85,5 @@ public class LoopStream : WaveStream
         return totalRead;
     }
 }
+
+// AI-generated

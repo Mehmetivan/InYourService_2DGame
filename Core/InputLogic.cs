@@ -11,6 +11,11 @@ public class InputLogic
     private bool _oneWasPressed = false;
     private bool _twoWasPressed = false;
 
+    private bool _f5WasPressed = false;
+    private bool _cWasPressed = false;
+    private bool _nWasPressed = false;
+
+
 
     public InputLogic(Silk.NET.SDL.Sdl sdl, GameLogic gameLogic)
     {
@@ -80,6 +85,22 @@ public class InputLogic
         if (twoPressed && !_twoWasPressed)
             _gameLogic.MakeChoice(1);
         _twoWasPressed = twoPressed;
+
+        bool f5Pressed = keyboardState[(byte)KeyCode.F5] > 0;
+        if (f5Pressed && !_f5WasPressed)
+            _gameLogic.SaveGame();
+        _f5WasPressed = f5Pressed;
+
+        bool cPressed = keyboardState[(byte)KeyCode.C] > 0;
+        if (cPressed && !_cWasPressed)
+            _gameLogic.SelectMenuOption("continue");
+        _cWasPressed = cPressed;
+
+        bool nPressed = keyboardState[(byte)KeyCode.N] > 0;
+        if (nPressed && !_nWasPressed)
+            _gameLogic.SelectMenuOption("new");
+        _nWasPressed = nPressed;
+
 
         return false;
     }

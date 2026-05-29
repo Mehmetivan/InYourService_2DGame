@@ -100,35 +100,37 @@ public class GameRenderer
         {
             if (_texturePointers.TryGetValue(textureId, out var texturePointer))
             {
+                var center = new Silk.NET.SDL.Point(0, 0);
                 _sdl.RenderCopyEx(
                     (Renderer*)_renderer,
                     (Texture*)texturePointer,
-                    src,
-                    dst,
+                    in src,
+                    in dst,
                     0,
-                    new Silk.NET.SDL.Point(0, 0),
+                    in center,
                     flip
                 );
             }
         }
     }
 
-
     public void RenderTile(IntPtr texturePointer, Rectangle<int> src, Rectangle<int> dst)
     {
         unsafe
         {
+            var center = new Silk.NET.SDL.Point(0, 0);
             _sdl.RenderCopyEx(
                 (Renderer*)_renderer,
                 (Texture*)texturePointer,
-                src,
-                dst,
+                in src,
+                in dst,
                 0,
-                new Silk.NET.SDL.Point(0, 0),
+                in center,
                 RendererFlip.None
             );
         }
     }
+
     public void DrawFilledRect(int x, int y, int width, int height,
         byte r, byte g, byte b, byte a = 255)
     {
@@ -138,7 +140,7 @@ public class GameRenderer
             _sdl.SetRenderDrawBlendMode(renderer, BlendMode.Blend);
             _sdl.SetRenderDrawColor(renderer, r, g, b, a);
             var rect = new Silk.NET.Maths.Rectangle<int>(x, y, width, height);
-            _sdl.RenderFillRect(renderer, rect);
+            _sdl.RenderFillRect(renderer, in rect);
         }
     }
 

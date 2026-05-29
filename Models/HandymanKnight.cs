@@ -187,4 +187,11 @@ public class HandymanKnight : RenderableGameObject
     {
         return true;
     }
+    public void SetPosition(int x, int y)
+    {
+        _x = x;
+        _y = y;
+        UpdateDestination(_x, _y);
+    }
+
 }

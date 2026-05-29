@@ -11,5 +11,6 @@ public enum KeyCode : UInt16
     Six = 35, Seven = 36, Eight = 37, Nine = 38, Zero = 39,
     Return = 40, Escape = 41, Backspace = 42, Tab = 43, Space = 44,
     Up = 82, Down = 81, Left = 80, Right = 79,
+    F5 = 62,
     Count = 512,
 }
