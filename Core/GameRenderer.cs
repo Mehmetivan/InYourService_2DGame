@@ -275,5 +275,16 @@ public class GameRenderer
             }
         }
     }
+    public void SetTextureAlpha(int textureId, byte alpha)
+    {
+        if (_texturePointers.TryGetValue(textureId, out var ptr))
+        {
+            unsafe
+            {
+                _sdl.SetTextureAlphaMod((Texture*)ptr, alpha);
+                _sdl.SetTextureBlendMode((Texture*)ptr, BlendMode.Blend);
+            }
+        }
+    }
     
 }

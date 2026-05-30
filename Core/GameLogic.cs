@@ -41,18 +41,23 @@ public class GameLogic : IDisposable
     private CombatState? _combat;
     private CombatRenderer? _combatRenderer;
 
+    private int _menuTextureId = -1;
+
+    private int _menuTitleWithContinueId = -1;
+    private int _menuTitleNoContinueId = -1;
+
     public GameLogic(GameRenderer renderer)
     {
         _renderer = renderer;
     }
-
     public void InitializeGame()
     {
-
         _camera = new Camera(1024, 800);
         _map = new GameMap();
         _map.LoadMap(Path.Combine("Assets", "map.json"), _renderer);
         _camera.SetMapSize(_map.MapPixelWidth, _map.MapPixelHeight);
+        _menuTitleWithContinueId = _renderer.LoadTexture(Path.Combine("Assets", "GameMenuScreen.jpg"), out _);
+_menuTitleNoContinueId = _renderer.LoadTexture(Path.Combine("Assets", "GameMenuScreen_wihtoutContinue.jpg"), out _);
 
         int startX = 652;
         int startY = 417;
@@ -67,20 +72,13 @@ public class GameLogic : IDisposable
         _npcs.Add(new Npc(625, 37, NpcType.Miner));
         _npcs.Add(new Npc(197, 782, NpcType.Turtle));
 
+        // Load menu background
+        _menuTextureId = _renderer.LoadTexture(Path.Combine("Assets", "GameMenu.jpg"), out _);
+
+        // Always start at main menu with music
         _audio.PlayMusic(Path.Combine("Assets", "Secunda.mp3"));
-        
-        // TEMP: skip to video
-        //_phase = GamePhase.Done;
-
-        if (SaveSystem.SaveExists())
-        {
-            _phase = GamePhase.MainMenu;
-        }
-        else
-        {
-            StartIntroDialogue();
-        }
-
+        _phase = GamePhase.MainMenu;
+    
         //testing last quest directly:
         // TEMP: complete all quests for testing
         //GameState.CompleteFarmerQuest();
@@ -370,15 +368,25 @@ public class GameLogic : IDisposable
 
         _renderer.Clear();
 
-        if (_phase == GamePhase.MainMenu)
-        {
-            _renderer.DrawFilledRect(0, 0, 1024, 800, 10, 10, 20);
-            _renderer.DrawText("IN YOUR SERVICE", 350, 300);
-            _renderer.DrawText("[C] CONTINUE", 420, 370);
-            _renderer.DrawText("[N] NEW GAME", 420, 400);
-            _renderer.Present();
-            return;
-        }
+        
+
+    if (_phase == GamePhase.MainMenu)
+    {
+        // Background
+        var bgSrc = new Silk.NET.Maths.Rectangle<int>(0, 0, 1280, 720);
+        var bgDst = new Silk.NET.Maths.Rectangle<int>(0, 0, 1024, 800);
+        _renderer.RenderTexture(_menuTextureId, bgSrc, bgDst);
+
+        // Title card on right side
+        var titleSrc = new Silk.NET.Maths.Rectangle<int>(0, 0, 267, 365);
+var titleDst = new Silk.NET.Maths.Rectangle<int>(680, 200, 267, 365);
+        int titleId = SaveSystem.SaveExists() ? _menuTitleWithContinueId : _menuTitleNoContinueId;
+        _renderer.SetTextureAlpha(titleId, 180);
+        _renderer.RenderTexture(titleId, titleSrc, titleDst);
+
+        _renderer.Present();
+        return;
+    }
         // Combat phase takes over entirely
         if (_phase == GamePhase.Combat && _combat != null)
         {
