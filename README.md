@@ -17,7 +17,6 @@ A top-down pixel RPG where you play as Handyman the Knight , a disgraced knight 
 | 1 / 2 | Dialogue choices |
 | Click | Attack (during combat) |
 | F5 | Save game |
-| ESC | Exit |
 
 ## Build & Run
 
