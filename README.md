@@ -1,6 +1,6 @@
 # In Your Service
 
-A top-down pixel RPG where you play as Handyman the Knight — a disgraced knight cast out of his castle and tasked with performing three honourable deeds to reclaim his honour.
+A top-down pixel RPG where you play as Handyman the Knight , a disgraced knight cast out of his castle and tasked with performing three honourable deeds to reclaim his honour.
 
 ## Gameplay
 - Walk around the kingdom and find 3 NPCs to help
